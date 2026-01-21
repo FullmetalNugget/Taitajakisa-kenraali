@@ -4,7 +4,7 @@ using System.Collections;
 public class Movement : MonoBehaviour
 {
     [Header("Movement Settings")]
-    [SerializeField] private float moveSpeed = 5f;
+    [SerializeField] public float moveSpeed = 5f;
     [SerializeField] private float jumpForce = 10f;
     [SerializeField] private float jumpChargeTime = 1f;
 
@@ -12,19 +12,19 @@ public class Movement : MonoBehaviour
     [SerializeField] private Transform groundCheck;
     [SerializeField] private float groundCheckRadius = 0.2f;
     [SerializeField] private LayerMask Ground;
+    [Header("Hammer Jump")]
+    public float chargeTime = 1f;
+    public float floatSpeed = 2f;
+    public float slamForce = 25f;
 
     [Header("First Person Camera Settings")]
     [SerializeField] private Transform cameraTransform; // Assign the camera (usually child of player)
     [SerializeField] private float mouseSensitivity = 2f;
     [SerializeField] private float minVerticalAngle = -90f; // Maximum down angle
     [SerializeField] private float maxVerticalAngle = 90f;  // Maximum up angle
-    [SerializeField] private bool invertYAxis = false;      // Option to invert mouse Y
-
-    // Crouch settings (optional)
-    [SerializeField] private bool enableCrouch = false;
-    [SerializeField] private float crouchHeight = 1f;
-    [SerializeField] private float normalHeight = 2f;
-    [SerializeField] private float crouchSpeed = 2.5f;
+    [SerializeField] private bool invertYAxis = false;
+    bool charging;
+    float chargeTimer;
 
     private Rigidbody rb;
     private Vector3 moveDirection;
@@ -32,14 +32,12 @@ public class Movement : MonoBehaviour
     private bool isChargingJump = false;
     private float jumpChargeTimer = 0f;
 
-    // Camera variables
     private float cameraPitch = 0f; // Vertical rotation
     private float cameraYaw = 0f;   // Horizontal rotation
     private Vector3 originalCameraLocalPosition;
     private bool isCrouching = false;
 
-    // Head bob variables (optional)
-    [Header("Head Bob Settings (Optional)")]
+    [Header("Head Bob Settings")]
     [SerializeField] private bool enableHeadBob = true;
     [SerializeField] private float headBobFrequency = 1.5f;
     [SerializeField] private float headBobHeight = 0.1f;
@@ -95,12 +93,6 @@ public class Movement : MonoBehaviour
 
         // Check if grounded
         isGrounded = Physics.CheckSphere(groundCheck.position, groundCheckRadius, Ground);
-
-        // Handle crouch input
-        if (enableCrouch && Input.GetKeyDown(KeyCode.LeftControl))
-        {
-            ToggleCrouch();
-        }
 
         // Get movement input - now relative to camera direction
         float horizontal = Input.GetAxis("Horizontal");
@@ -202,16 +194,55 @@ public class Movement : MonoBehaviour
             isChargingJump = false;
             jumpChargeTimer = 0f;
         }
+        Vector2 move = Vector2.zero;
+        bool jumpHeld = false;
+        bool jumpPressed = false;
+        bool jumpReleased = false;
+
+        move = Vector2.ClampMagnitude(move, 1f);
+
+        rb.linearVelocity = new Vector3(
+            move.x * moveSpeed,
+            rb.linearVelocity.y,
+            move.y * moveSpeed
+        );
+
+        if (jumpPressed && IsGrounded)
+        {
+            charging = true;
+            chargeTimer = 0f;
+            rb.useGravity = false;
+            rb.linearVelocity = Vector3.zero;
+        }
+
+        if (charging && jumpHeld)
+        {
+            chargeTimer += Time.deltaTime;
+            rb.linearVelocity = Vector3.up * floatSpeed;
+
+            if (chargeTimer >= chargeTime)
+                Slam();
+        }
+
+        if (charging && jumpReleased)
+        {
+            Slam();
+        }
+    }
+
+    void Slam()
+    {
+        charging = false;
+        rb.useGravity = true;
+        rb.linearVelocity = Vector3.zero;
+        rb.AddForce(Vector3.down * slamForce, ForceMode.Impulse);
     }
 
     void MovePlayer()
     {
-        // Adjust speed if crouching
-        float currentSpeed = isCrouching ? crouchSpeed : moveSpeed;
-
         if (moveDirection.magnitude >= 0.1f)
         {
-            Vector3 moveVelocity = moveDirection * currentSpeed;
+            Vector3 moveVelocity = moveDirection * moveSpeed;
             rb.linearVelocity = new Vector3(moveVelocity.x, rb.linearVelocity.y, moveVelocity.z);
         }
         else
@@ -219,16 +250,6 @@ public class Movement : MonoBehaviour
             // Apply damping when no input
             rb.linearVelocity = new Vector3(rb.linearVelocity.x * 0.9f, rb.linearVelocity.y, rb.linearVelocity.z * 0.9f);
         }
-    }
-
-    void ToggleCrouch()
-    {
-        isCrouching = !isCrouching;
-
-        // Adjust camera height when crouching
-        Vector3 newCameraPosition = originalCameraLocalPosition;
-        newCameraPosition.y = isCrouching ? crouchHeight : normalHeight;
-        cameraTransform.localPosition = newCameraPosition;
     }
 
     void ApplyHeadBob()
