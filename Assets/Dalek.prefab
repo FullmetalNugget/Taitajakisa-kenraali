@@ -75,15 +75,15 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: 4395dd85cc1bb92438747b780d5d7113, type: 3}
       propertyPath: m_LocalPosition.x
-      value: -20.65
+      value: -5.624687
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: 4395dd85cc1bb92438747b780d5d7113, type: 3}
       propertyPath: m_LocalPosition.y
-      value: -0.03
+      value: -0.07000065
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: 4395dd85cc1bb92438747b780d5d7113, type: 3}
       propertyPath: m_LocalPosition.z
-      value: -16.25
+      value: -1.8710322
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: 4395dd85cc1bb92438747b780d5d7113, type: 3}
       propertyPath: m_LocalRotation.w
@@ -139,10 +139,10 @@ PrefabInstance:
       addedObject: {fileID: 7881538562857675535}
     - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: 4395dd85cc1bb92438747b780d5d7113, type: 3}
       insertIndex: -1
-      addedObject: {fileID: 5429640209079418974}
+      addedObject: {fileID: 8129478339144441532}
     - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: 4395dd85cc1bb92438747b780d5d7113, type: 3}
       insertIndex: -1
-      addedObject: {fileID: 953148478609974296}
+      addedObject: {fileID: 385864909595156802}
   m_SourcePrefab: {fileID: 100100000, guid: 4395dd85cc1bb92438747b780d5d7113, type: 3}
 --- !u!4 &8623302607581673843 stripped
 Transform:
@@ -224,7 +224,7 @@ BoxCollider:
   serializedVersion: 3
   m_Size: {x: 2, y: 5.06, z: 2}
   m_Center: {x: 0, y: 2.24, z: 0}
---- !u!114 &5429640209079418974
+--- !u!114 &8129478339144441532
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -236,14 +236,14 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: ca4942f9aa398b74db0b27b8f82bb7b8, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  fleeDistance: 10
-  detectionRange: 15
-  wanderRadius: 5
-  wanderTimer: 3
+  fleeDistance: 8
+  detectionRange: 25
+  wanderRadius: 10
+  wanderTimer: 5
   crushEffect: {fileID: 0}
   crushSound: {fileID: 0}
-  headTriggerArea: {fileID: 0}
---- !u!195 &953148478609974296
+  headTriggerArea: {fileID: 4698794095567866269}
+--- !u!195 &385864909595156802
 NavMeshAgent:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
