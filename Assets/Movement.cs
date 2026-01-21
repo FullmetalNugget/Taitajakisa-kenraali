@@ -3,21 +3,6 @@ using System.Collections;
 
 public class Movement : MonoBehaviour
 {
-    [Header("Movement Settings")]
-    [SerializeField] private float moveSpeed = 5f;
-    [SerializeField] private float jumpForce = 10f;
-    [SerializeField] private float jumpChargeTime = 1f;
-
-    [Header("Ground Check")]
-    [SerializeField] private Transform groundCheck;
-    [SerializeField] private float groundCheckRadius = 0.2f;
-    [SerializeField] private LayerMask Ground;
-
-    private Rigidbody rb;
-    private Vector3 moveDirection;
-    private bool isGrounded;
-    private bool isChargingJump = false;
-    private float jumpChargeTimer = 0f;
 
     void Start()
     {
@@ -27,10 +12,16 @@ public class Movement : MonoBehaviour
             rb = gameObject.AddComponent<Rigidbody>();
             rb.constraints = RigidbodyConstraints.FreezeRotation;
         }
+
+        // Lock cursor for first-person
+        Cursor.lockState = CursorLockMode.Locked;
+        Cursor.visible = false;
     }
 
     void Update()
     {
+        HandleCamera();
+
         // Check if grounded
         isGrounded = Physics.CheckSphere(groundCheck.position, groundCheckRadius, Ground);
 
@@ -69,6 +60,22 @@ public class Movement : MonoBehaviour
         {
             MovePlayer();
         }
+    }
+
+    void HandleCamera()
+    {
+        if (playerCamera == null) return;
+
+        float mouseX = Input.GetAxis("Mouse X") * mouseSensitivity;
+        float mouseY = Input.GetAxis("Mouse Y") * mouseSensitivity;
+
+        // Rotate player horizontally
+        transform.Rotate(Vector3.up * mouseX);
+
+        // Rotate camera vertically
+        xRotation -= mouseY;
+        xRotation = Mathf.Clamp(xRotation, -maxLookAngle, maxLookAngle);
+        playerCamera.localRotation = Quaternion.Euler(xRotation, 0f, 0f);
     }
 
     void StartJumpCharge()
