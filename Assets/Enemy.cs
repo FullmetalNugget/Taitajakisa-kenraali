@@ -2,276 +2,280 @@ using System.Collections;
 using UnityEngine;
 using UnityEngine.AI;
 
-public class Enemy : MonoBehaviour
+namespace Dalek
 {
-    [Header("AI Settings")]
-    [SerializeField] private float fleeDistance = 10f;
-    [SerializeField] private float detectionRange = 15f;
-    [SerializeField] private float wanderRadius = 5f;
-    [SerializeField] private float wanderTimer = 3f;
-
-    [Header("Crush Settings")]
-    [SerializeField] private GameObject crushEffect;
-    [SerializeField] private AudioClip crushSound;
-
-    private NavMeshAgent agent;
-    private Animator animator;
-    private Transform player;
-    private bool isAlive = true;
-    private float timer;
-
-    [Header("Crush Detection")]
-    [SerializeField] private GameObject headTriggerArea;
-
-    void Start()
+    public class Enemy : MonoBehaviour
     {
-        // Get required components
-        agent = GetComponent<NavMeshAgent>();
-        animator = GetComponent<Animator>();
+        [Header("AI Settings")]
+        [SerializeField] private float fleeDistance = 10f;
+        [SerializeField] private float detectionRange = 15f;
+        [SerializeField] private float wanderRadius = 5f;
+        [SerializeField] private float wanderTimer = 3f;
 
-        // Find player
-        GameObject playerObj = GameObject.FindGameObjectWithTag("Player");
-        if (playerObj != null)
+        [Header("Crush Settings")]
+        [SerializeField] private GameObject crushEffect;
+        [SerializeField] private AudioClip crushSound;
+
+        private NavMeshAgent agent;
+        private Animator animator;
+        private Transform player;
+        private bool isAlive = true;
+        private float timer;
+
+        [Header("Crush Detection")]
+        [SerializeField] private GameObject headTriggerArea;
+
+        void Start()
         {
-            player = playerObj.transform;
-        }
-        else
-        {
-            Debug.LogError("No GameObject with tag 'Player' found in the scene!");
-        }
+            // Get required components
+            agent = GetComponent<NavMeshAgent>();
+            animator = GetComponent<Animator>();
 
-        // Create head trigger if not assigned
-        if (headTriggerArea == null)
-        {
-            CreateHeadTrigger();
-        }
-
-        // Initialize wander timer
-        timer = wanderTimer;
-    }
-
-    void CreateHeadTrigger()
-    {
-        // Create a trigger collider on top of the enemy
-        headTriggerArea = new GameObject("HeadTrigger");
-        headTriggerArea.transform.parent = transform;
-        headTriggerArea.transform.localPosition = Vector3.up * 1f; // Adjust based on enemy height
-        headTriggerArea.layer = LayerMask.NameToLayer("Ignore Raycast"); // Optional: prevent raycast issues
-
-        BoxCollider triggerCollider = headTriggerArea.AddComponent<BoxCollider>();
-        triggerCollider.isTrigger = true;
-        triggerCollider.size = new Vector3(1f, 0.2f, 1f); // Thin trigger area on top
-
-        // Add a rigidbody (kinematic) for better trigger detection
-        Rigidbody triggerRb = headTriggerArea.AddComponent<Rigidbody>();
-        triggerRb.isKinematic = true;
-        triggerRb.useGravity = false;
-    }
-
-    void Update()
-    {
-        if (!isAlive) return;
-        if (player == null) return;
-
-        if (agent == null)
-        {
-            Debug.LogError("NavMeshAgent component is missing!");
-            return;
-        }
-
-        if (!agent.enabled) return;
-
-        float distanceToPlayer = Vector3.Distance(transform.position, player.position);
-
-        // Check if player is in detection range
-        if (distanceToPlayer <= detectionRange)
-        {
-            FleeFromPlayer();
-
-            // Set animation
-            if (animator != null)
+            // Find player
+            GameObject playerObj = GameObject.FindGameObjectWithTag("Player");
+            if (playerObj != null)
             {
-                animator.SetBool("IsRunning", true);
+                player = playerObj.transform;
+            }
+            else
+            {
+                Debug.LogError("No GameObject with tag 'Player' found in the scene!");
+            }
+
+            // Create head trigger if not assigned
+            if (headTriggerArea == null)
+            {
+                CreateHeadTrigger();
+            }
+
+            // Initialize wander timer
+            timer = wanderTimer;
+        }
+
+        void CreateHeadTrigger()
+        {
+            // Create a trigger collider on top of the enemy
+            headTriggerArea = new GameObject("HeadTrigger");
+            headTriggerArea.transform.parent = transform;
+            headTriggerArea.transform.localPosition = Vector3.up * 1f; // Adjust based on enemy height
+            headTriggerArea.layer = LayerMask.NameToLayer("Ignore Raycast"); // Optional: prevent raycast issues
+
+            BoxCollider triggerCollider = headTriggerArea.AddComponent<BoxCollider>();
+            triggerCollider.isTrigger = true;
+            triggerCollider.size = new Vector3(1f, 0.2f, 1f); // Thin trigger area on top
+
+            // Add a rigidbody (kinematic) for better trigger detection
+            Rigidbody triggerRb = headTriggerArea.AddComponent<Rigidbody>();
+            triggerRb.isKinematic = true;
+            triggerRb.useGravity = false;
+        }
+
+        void Update()
+        {
+            if (!isAlive) return;
+            if (player == null) return;
+
+            if (agent == null)
+            {
+                Debug.LogError("NavMeshAgent component is missing!");
+                return;
+            }
+
+            if (!agent.enabled) return;
+
+            float distanceToPlayer = Vector3.Distance(transform.position, player.position);
+
+            // Check if player is in detection range
+            if (distanceToPlayer <= detectionRange)
+            {
+                FleeFromPlayer();
+
+                // Set animation
+                if (animator != null)
+                {
+                    animator.SetBool("IsRunning", true);
+                }
+            }
+            else
+            {
+                Wander();
+
+                // Set animation
+                if (animator != null)
+                {
+                    animator.SetBool("IsRunning", false);
+                }
             }
         }
-        else
+
+        void FleeFromPlayer()
         {
-            Wander();
+            if (player == null || agent == null || !agent.isActiveAndEnabled) return;
 
-            // Set animation
-            if (animator != null)
-            {
-                animator.SetBool("IsRunning", false);
-            }
-        }
-    }
+            Vector3 fleeDirection = (transform.position - player.position).normalized;
+            Vector3 fleePosition = transform.position + fleeDirection * fleeDistance;
 
-    void FleeFromPlayer()
-    {
-        if (player == null || agent == null || !agent.isActiveAndEnabled) return;
-
-        Vector3 fleeDirection = (transform.position - player.position).normalized;
-        Vector3 fleePosition = transform.position + fleeDirection * fleeDistance;
-
-        // Use NavMesh to find a valid flee position
-        NavMeshHit hit;
-        if (NavMesh.SamplePosition(fleePosition, out hit, fleeDistance, NavMesh.AllAreas))
-        {
-            agent.SetDestination(hit.position);
-        }
-        else
-        {
-            // If no valid flee position found, try a closer position
-            fleePosition = transform.position + fleeDirection * (fleeDistance / 2f);
-            if (NavMesh.SamplePosition(fleePosition, out hit, fleeDistance / 2f, NavMesh.AllAreas))
+            // Use NavMesh to find a valid flee position
+            NavMeshHit hit;
+            if (NavMesh.SamplePosition(fleePosition, out hit, fleeDistance, NavMesh.AllAreas))
             {
                 agent.SetDestination(hit.position);
             }
-        }
-    }
-
-    void Wander()
-    {
-        if (agent == null || !agent.isActiveAndEnabled) return;
-
-        timer += Time.deltaTime;
-
-        if (timer >= wanderTimer)
-        {
-            // Check if agent is already moving to a destination
-            if (!agent.pathPending && agent.remainingDistance <= agent.stoppingDistance)
+            else
             {
-                Vector3 randomDirection = Random.insideUnitSphere * wanderRadius;
-                randomDirection += transform.position;
-
-                NavMeshHit hit;
-                if (NavMesh.SamplePosition(randomDirection, out hit, wanderRadius, NavMesh.AllAreas))
+                // If no valid flee position found, try a closer position
+                fleePosition = transform.position + fleeDirection * (fleeDistance / 2f);
+                if (NavMesh.SamplePosition(fleePosition, out hit, fleeDistance / 2f, NavMesh.AllAreas))
                 {
                     agent.SetDestination(hit.position);
                 }
             }
-
-            timer = 0f;
         }
-    }
 
-    void OnCollisionEnter(Collision collision)
-    {
-        if (!isAlive) return;
-
-        if (collision.gameObject.CompareTag("Player"))
+        void Wander()
         {
-            Rigidbody playerRb = collision.gameObject.GetComponent<Rigidbody>();
-            if (playerRb == null) return;
+            if (agent == null || !agent.isActiveAndEnabled) return;
 
-            Movement movement = collision.gameObject.GetComponent<Movement>();
+            timer += Time.deltaTime;
 
-            // Simple crush detection: check if player is above and falling
-            float playerHeightAboveEnemy = playerRb.position.y - transform.position.y;
-
-            // Debug to help tune values
-            Debug.Log($"Collision - PlayerY: {playerRb.position.y}, EnemyY: {transform.position.y}, Diff: {playerHeightAboveEnemy}, VelY: {playerRb.linearVelocity.y}");
-
-            // Adjust 1.0f based on your enemy height (should be about half the enemy's height)
-            if (playerHeightAboveEnemy > 0.5f && playerRb.linearVelocity.y < -0.5f)
+            if (timer >= wanderTimer)
             {
-                CrushEnemy();
+                // Check if agent is already moving to a destination
+                if (!agent.pathPending && agent.remainingDistance <= agent.stoppingDistance)
+                {
+                    Vector3 randomDirection = Random.insideUnitSphere * wanderRadius;
+                    randomDirection += transform.position;
 
-                // Bounce the player
-                playerRb.linearVelocity = new Vector3(playerRb.linearVelocity.x, 8f, playerRb.linearVelocity.z);
+                    NavMeshHit hit;
+                    if (NavMesh.SamplePosition(randomDirection, out hit, wanderRadius, NavMesh.AllAreas))
+                    {
+                        agent.SetDestination(hit.position);
+                    }
+                }
+
+                timer = 0f;
             }
         }
-    }
 
-    void OnTriggerEnter(Collider other)
-    {
-        if (!isAlive) return;
-
-        // Only use trigger if it's from the head area (optional)
-        if (other.gameObject == headTriggerArea) return;
-
-        if (other.CompareTag("Player"))
+        void OnCollisionEnter(Collision collision)
         {
-            Rigidbody playerRb = other.GetComponent<Rigidbody>();
-            if (playerRb == null) return;
+            if (!isAlive) return;
 
-            // Simple check: if player is moving downward
-            if (playerRb.linearVelocity.y < -1f)
+            if (collision.gameObject.CompareTag("Player"))
             {
-                CrushEnemy();
+                Rigidbody playerRb = collision.gameObject.GetComponent<Rigidbody>();
+                if (playerRb == null) return;
 
-                // Bounce player
-                playerRb.linearVelocity = new Vector3(playerRb.linearVelocity.x, 8f, playerRb.linearVelocity.z);
+                Movement movement = collision.gameObject.GetComponent<Movement>();
+
+                // Simple crush detection: check if player is above and falling
+                float playerHeightAboveEnemy = playerRb.position.y - transform.position.y;
+
+                // Debug to help tune values
+                Debug.Log($"Collision - PlayerY: {playerRb.position.y}, EnemyY: {transform.position.y}, Diff: {playerHeightAboveEnemy}, VelY: {playerRb.linearVelocity.y}");
+
+                // Adjust 1.0f based on your enemy height (should be about half the enemy's height)
+                if (playerHeightAboveEnemy > 0.5f && playerRb.linearVelocity.y < -0.5f)
+                {
+                    CrushEnemy();
+
+                    // Bounce the player
+                    playerRb.linearVelocity = new Vector3(playerRb.linearVelocity.x, 8f, playerRb.linearVelocity.z);
+                }
             }
         }
-    }
 
-    void CrushEnemy()
-    {
-        if (!isAlive) return;
-
-        isAlive = false;
-
-        // Stop AI
-        if (agent != null)
+        void OnTriggerEnter(Collider other)
         {
-            agent.isStopped = true;
-            agent.enabled = false;
+            if (!isAlive) return;
+
+            // Only use trigger if it's from the head area (optional)
+            if (other.gameObject == headTriggerArea) return;
+
+            if (other.CompareTag("Player"))
+            {
+                Rigidbody playerRb = other.GetComponent<Rigidbody>();
+                if (playerRb == null) return;
+
+                // Simple check: if player is moving downward
+                if (playerRb.linearVelocity.y < -1f)
+                {
+                    CrushEnemy();
+
+                    // Bounce player
+                    playerRb.linearVelocity = new Vector3(playerRb.linearVelocity.x, 8f, playerRb.linearVelocity.z);
+                }
+            }
         }
 
-        // Play crush animation
-        if (animator != null)
+        public void CrushEnemy()
         {
-            animator.SetTrigger("Crushed");
+            if (!isAlive) return;
+
+            isAlive = false;
+
+            // Stop AI
+            if (agent != null)
+            {
+                agent.isStopped = true;
+                agent.enabled = false;
+            }
+
+            // Play crush animation
+            if (animator != null)
+            {
+                animator.SetTrigger("Crushed");
+            }
+
+            // Spawn effects
+            if (crushEffect != null)
+            {
+                Instantiate(crushEffect, transform.position, Quaternion.identity);
+            }
+
+            // Play sound
+            if (crushSound != null)
+            {
+                AudioSource.PlayClipAtPoint(crushSound, transform.position);
+            }
+
+            // Optional: Disable collider to prevent further collisions
+            Collider col = GetComponent<Collider>();
+            if (col != null)
+            {
+                col.enabled = false;
+            }
+
+            // Destroy after delay
+            StartCoroutine(DestroyAfterDelay(2f));
+
+            // Add score (if you have a score manager)
+            AddScore();
         }
 
-        // Spawn effects
-        if (crushEffect != null)
+        void AddScore()
         {
-            Instantiate(crushEffect, transform.position, Quaternion.identity);
+            // If you have a ScoreManager, call it here
+            // Example: ScoreManager.instance.AddScore(1);
+            ScoreManager.instance.AddScore(1);
+            HungerManager.instance?.RestoreHunger();
         }
 
-        // Play sound
-        if (crushSound != null)
+        IEnumerator DestroyAfterDelay(float delay)
         {
-            AudioSource.PlayClipAtPoint(crushSound, transform.position);
+            yield return new WaitForSeconds(delay);
+            Destroy(gameObject);
         }
 
-        // Optional: Disable collider to prevent further collisions
-        Collider col = GetComponent<Collider>();
-        if (col != null)
+        void OnDrawGizmosSelected()
         {
-            col.enabled = false;
+            // Draw detection range
+            Gizmos.color = Color.yellow;
+            Gizmos.DrawWireSphere(transform.position, detectionRange);
+
+            // Draw flee distance
+            Gizmos.color = Color.red;
+            Gizmos.DrawWireSphere(transform.position, fleeDistance);
         }
-
-        // Destroy after delay
-        StartCoroutine(DestroyAfterDelay(2f));
-
-        // Add score (if you have a score manager)
-        AddScore();
-    }
-
-    void AddScore()
-    {
-        // If you have a ScoreManager, call it here
-        // Example: ScoreManager.instance.AddScore(1);
-        Debug.Log("Enemy crushed! +1 point");
-    }
-
-    IEnumerator DestroyAfterDelay(float delay)
-    {
-        yield return new WaitForSeconds(delay);
-        Destroy(gameObject);
-    }
-
-    void OnDrawGizmosSelected()
-    {
-        // Draw detection range
-        Gizmos.color = Color.yellow;
-        Gizmos.DrawWireSphere(transform.position, detectionRange);
-
-        // Draw flee distance
-        Gizmos.color = Color.red;
-        Gizmos.DrawWireSphere(transform.position, fleeDistance);
     }
 }

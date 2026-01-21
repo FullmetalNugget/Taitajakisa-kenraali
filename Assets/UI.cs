@@ -1,42 +1,46 @@
 using UnityEngine;
 using UnityEngine.UI;
+using TMPro;
 
-public class ScoreManager : MonoBehaviour
+namespace Dalek
 {
-    public static ScoreManager instance;
-
-    private int score = 0;
-    [SerializeField] private Text scoreText;
-
-    void Awake()
+    public class ScoreManager : MonoBehaviour
     {
-        if (instance == null)
+        public static ScoreManager instance;
+
+        private int score = 0;
+        [SerializeField] private TMP_Text scoreText;
+
+        void Awake()
         {
-            instance = this;
-            DontDestroyOnLoad(gameObject);
+            if (instance == null)
+            {
+                instance = this;
+                DontDestroyOnLoad(gameObject);
+            }
+            else
+            {
+                Destroy(gameObject);
+            }
         }
-        else
+
+        public void AddScore(int points)
         {
-            Destroy(gameObject);
+            score += points;
+            UpdateScoreUI();
         }
-    }
 
-    public void AddScore(int points)
-    {
-        score += points;
-        UpdateScoreUI();
-    }
-
-    void UpdateScoreUI()
-    {
-        if (scoreText != null)
+        void UpdateScoreUI()
         {
-            scoreText.text = "Score: " + score;
+            if (scoreText != null)
+            {
+                scoreText.text = "Score: " + score;
+            }
         }
-    }
 
-    public int GetScore()
-    {
-        return score;
+        public int GetScore()
+        {
+            return score;
+        }
     }
 }
