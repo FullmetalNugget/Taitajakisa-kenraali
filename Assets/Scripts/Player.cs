@@ -1,69 +1,78 @@
 using UnityEngine;
 using UnityEngine.InputSystem;
 
-[RequireComponent(typeof(Rigidbody))]
-public class PlayerController : MonoBehaviour
+[RequireComponent(typeof(Rigidbody), typeof(Collider))]
+public class Player : MonoBehaviour
 {
     public float moveSpeed = 5f;
 
     [Header("Hammer Jump")]
     public float chargeTime = 1f;
-    public float floatUpForce = 3f;
-    public float slamForce = 20f;
+    public float floatHeight = 2f;
+    public float slamForce = 25f;
 
     Rigidbody rb;
-    Vector2 moveInput;
+    Collider col;
 
-    PlayerInputActions input;
-
-    float jumpCharge;
+    float chargeTimer;
+    float startY;
     bool charging;
-    bool grounded;
+    bool slamming;
 
     void Awake()
     {
         rb = GetComponent<Rigidbody>();
-        rb.useGravity = true;
-
-        input = new PlayerInputActions();
-
-        input.Player.Move.performed += ctx => moveInput = ctx.ReadValue<Vector2>();
-        input.Player.Move.canceled += _ => moveInput = Vector2.zero;
-
-        input.Player.Jump.performed += _ => StartCharge();
-        input.Player.Jump.canceled += _ => ReleaseJump();
+        col = GetComponent<Collider>();
+        rb.freezeRotation = true;
     }
-
-    void OnEnable() => input.Player.Enable();
-    void OnDisable() => input.Player.Disable();
 
     void FixedUpdate()
     {
-        grounded = IsGrounded();
+        var gamepad = Gamepad.current;
+        if (gamepad == null) return;
 
-        // movement
+        // movement (left stick)
+        Vector2 stick = gamepad.leftStick.ReadValue();
         Vector3 vel = rb.velocity;
-        Vector3 move = new Vector3(moveInput.x, 0f, moveInput.y) * moveSpeed;
-        rb.velocity = new Vector3(move.x, vel.y, move.z);
+        rb.velocity = new Vector3(stick.x * moveSpeed, vel.y, stick.y * moveSpeed);
 
-        // charging: float up
-        if (charging)
-        {
-            jumpCharge += Time.fixedDeltaTime;
-            jumpCharge = Mathf.Min(jumpCharge, chargeTime);
+        // jump input (A button)
+        if (gamepad.buttonSouth.wasPressedThisFrame)
+            BeginCharge();
 
-            rb.AddForce(Vector3.up * floatUpForce, ForceMode.Acceleration);
-            rb.velocity = new Vector3(rb.velocity.x, Mathf.Min(rb.velocity.y, 2f), rb.velocity.z);
-        }
+        if (gamepad.buttonSouth.isPressed && charging)
+            ChargeFloat();
+
+        if (gamepad.buttonSouth.wasReleasedThisFrame)
+            ReleaseJump();
+
+        if (slamming && IsGrounded())
+            slamming = false;
     }
 
-    void StartCharge()
+    void BeginCharge()
     {
-        if (!grounded) return;
+        if (!IsGrounded()) return;
 
         charging = true;
-        jumpCharge = 0f;
-        rb.velocity = new Vector3(rb.velocity.x, 0f, rb.velocity.z);
+        slamming = false;
+        chargeTimer = 0f;
+
+        startY = rb.position.y;
+        rb.velocity = Vector3.zero;
+        rb.useGravity = false;
+    }
+
+    void ChargeFloat()
+    {
+        chargeTimer += Time.fixedDeltaTime;
+        float t = Mathf.Clamp01(chargeTimer / chargeTime);
+
+        float targetY = startY + floatHeight * t;
+        rb.MovePosition(new Vector3(rb.position.x, targetY, rb.position.z));
+
+        if (t >= 1f)
+            ReleaseJump();
     }
 
     void ReleaseJump()
@@ -71,17 +80,20 @@ public class PlayerController : MonoBehaviour
         if (!charging) return;
 
         charging = false;
+        slamming = true;
 
-        float power = jumpCharge / chargeTime;
-        rb.velocity = new Vector3(rb.velocity.x, 0f, rb.velocity.z);
-        rb.AddForce(Vector3.down * slamForce * Mathf.Max(power, 0.3f), ForceMode.Impulse);
-
-        jumpCharge = 0f;
+        rb.useGravity = true;
+        rb.velocity = Vector3.zero;
+        rb.AddForce(Vector3.down * slamForce, ForceMode.Impulse);
     }
 
     bool IsGrounded()
     {
-        return Physics.Raycast(transform.position, Vector3.down, 1.1f);
+        return Physics.Raycast(
+            col.bounds.center,
+            Vector3.down,
+            col.bounds.extents.y + 0.05f
+        );
     }
 }
 
