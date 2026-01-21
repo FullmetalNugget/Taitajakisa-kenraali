@@ -75,15 +75,15 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: 4395dd85cc1bb92438747b780d5d7113, type: 3}
       propertyPath: m_LocalPosition.x
-      value: -5.624687
+      value: -33.16
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: 4395dd85cc1bb92438747b780d5d7113, type: 3}
       propertyPath: m_LocalPosition.y
-      value: -0.07000065
+      value: -0.14
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: 4395dd85cc1bb92438747b780d5d7113, type: 3}
       propertyPath: m_LocalPosition.z
-      value: -1.8710322
+      value: -5.87
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: 4395dd85cc1bb92438747b780d5d7113, type: 3}
       propertyPath: m_LocalRotation.w
@@ -236,12 +236,12 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: ca4942f9aa398b74db0b27b8f82bb7b8, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  fleeDistance: 8
-  detectionRange: 25
+  fleeDistance: 4
+  detectionRange: 14
   wanderRadius: 10
   wanderTimer: 5
   crushEffect: {fileID: 0}
-  crushSound: {fileID: 0}
+  crushSound: {fileID: 8300000, guid: 964dfe3e71654b2e69e911652c11cf33, type: 3}
   headTriggerArea: {fileID: 4698794095567866269}
 --- !u!195 &385864909595156802
 NavMeshAgent:
