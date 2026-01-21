@@ -1,46 +1,48 @@
-void FixedUpdate()
+using UnityEngine;
+using UnityEngine.InputSystem;
+
+[RequireComponent(typeof(Rigidbody), typeof(Collider))]
+public class Player : MonoBehaviour
 {
-    Vector2 move = Vector2.zero;
+    public float moveSpeed = 5f;
 
-    // GAMEPAD
-    if (Gamepad.current != null)
+    Rigidbody rb;
+    Collider col;
+
+    void Awake()
     {
-        move = Gamepad.current.leftStick.ReadValue();
-
-        if (Gamepad.current.buttonSouth.wasPressedThisFrame)
-            BeginCharge();
-
-        if (Gamepad.current.buttonSouth.isPressed && charging)
-            ChargeFloat();
-
-        if (Gamepad.current.buttonSouth.wasReleasedThisFrame)
-            ReleaseJump();
+        rb = GetComponent<Rigidbody>();
+        col = GetComponent<Collider>();
+        rb.freezeRotation = true;
     }
 
-    // KEYBOARD (WASD)
-    if (Keyboard.current != null)
+    void Update()
     {
-        if (Keyboard.current.wKey.isPressed) move.y += 1;
-        if (Keyboard.current.sKey.isPressed) move.y -= 1;
-        if (Keyboard.current.aKey.isPressed) move.x -= 1;
-        if (Keyboard.current.dKey.isPressed) move.x += 1;
+        Vector2 move = Vector2.zero;
 
-        if (Keyboard.current.spaceKey.wasPressedThisFrame)
-            BeginCharge();
+        // KEYBOARD (WASD)
+        if (Keyboard.current != null)
+        {
+            if (Keyboard.current.wKey.isPressed) move.y += 1;
+            if (Keyboard.current.sKey.isPressed) move.y -= 1;
+            if (Keyboard.current.aKey.isPressed) move.x -= 1;
+            if (Keyboard.current.dKey.isPressed) move.x += 1;
+        }
 
-        if (Keyboard.current.spaceKey.isPressed && charging)
-            ChargeFloat();
+        // GAMEPAD (LEFT STICK)
+        if (Gamepad.current != null)
+        {
+            move += Gamepad.current.leftStick.ReadValue();
+        }
 
-        if (Keyboard.current.spaceKey.wasReleasedThisFrame)
-            ReleaseJump();
+        move = Vector2.ClampMagnitude(move, 1f);
+
+        Vector3 vel = rb.velocity;
+        rb.velocity = new Vector3(
+            move.x * moveSpeed,
+            vel.y,
+            move.y * moveSpeed
+        );
     }
-
-    move = Vector2.ClampMagnitude(move, 1f);
-
-    Vector3 vel = rb.velocity;
-    rb.velocity = new Vector3(move.x * moveSpeed, vel.y, move.y * moveSpeed);
-
-    if (slamming && IsGrounded())
-        slamming = false;
 }
 
