@@ -12,35 +12,27 @@ public class Movement : MonoBehaviour
     [SerializeField] private Transform groundCheck;
     [SerializeField] private float groundCheckRadius = 0.2f;
     [SerializeField] private LayerMask Ground;
-    [Header("Hammer Jump")]
-    public float chargeTime = 1f;
-    public float floatSpeed = 2f;
-    public float slamForce = 25f;
 
     [Header("First Person Camera Settings")]
-    [SerializeField] private Transform cameraTransform; // Assign the camera (usually child of player)
+    [SerializeField] private Transform cameraTransform;
     [SerializeField] private float mouseSensitivity = 2f;
-    [SerializeField] private float minVerticalAngle = -90f; // Maximum down angle
-    [SerializeField] private float maxVerticalAngle = 90f;  // Maximum up angle
+    [SerializeField] private float minVerticalAngle = -90f;
+    [SerializeField] private float maxVerticalAngle = 90f;
     [SerializeField] private bool invertYAxis = false;
-    bool charging;
-    float chargeTimer;
+
+    [Header("Head Bob Settings")]
+    [SerializeField] private bool enableHeadBob = true;
+    [SerializeField] private float headBobFrequency = 1.5f;
+    [SerializeField] private float headBobHeight = 0.1f;
 
     private Rigidbody rb;
     private Vector3 moveDirection;
     private bool isGrounded;
     private bool isChargingJump = false;
     private float jumpChargeTimer = 0f;
-
-    private float cameraPitch = 0f; // Vertical rotation
-    private float cameraYaw = 0f;   // Horizontal rotation
+    private float cameraPitch = 0f;
+    private float cameraYaw = 0f;
     private Vector3 originalCameraLocalPosition;
-    private bool isCrouching = false;
-
-    [Header("Head Bob Settings")]
-    [SerializeField] private bool enableHeadBob = true;
-    [SerializeField] private float headBobFrequency = 1.5f;
-    [SerializeField] private float headBobHeight = 0.1f;
     private float headBobTimer = 0f;
 
     void Start()
@@ -55,18 +47,15 @@ public class Movement : MonoBehaviour
         // Camera setup
         if (cameraTransform == null)
         {
-            // Try to find camera in children
             cameraTransform = GetComponentInChildren<Camera>()?.transform;
             if (cameraTransform == null)
             {
-                // Create a camera if none exists
                 GameObject cameraObj = new GameObject("Player Camera");
                 cameraObj.transform.parent = transform;
-                cameraObj.transform.localPosition = Vector3.up * 0.5f;
+                cameraObj.transform.localPosition = Vector3.up * 1.6f;
                 Camera cam = cameraObj.AddComponent<Camera>();
                 cameraTransform = cam.transform;
 
-                // Add audio listener if not present
                 if (FindObjectOfType<AudioListener>() == null)
                 {
                     cameraObj.AddComponent<AudioListener>();
@@ -74,27 +63,22 @@ public class Movement : MonoBehaviour
             }
         }
 
-        // Store original camera position
         originalCameraLocalPosition = cameraTransform.localPosition;
-
-        // Initialize camera rotation to current orientation
         cameraPitch = cameraTransform.localEulerAngles.x;
         cameraYaw = transform.eulerAngles.y;
 
-        // Lock cursor to screen
         Cursor.lockState = CursorLockMode.Locked;
         Cursor.visible = false;
     }
 
     void Update()
     {
-        // Handle camera rotation
         HandleCameraRotation();
 
         // Check if grounded
         isGrounded = Physics.CheckSphere(groundCheck.position, groundCheckRadius, Ground);
 
-        // Get movement input - now relative to camera direction
+        // Get movement input
         float horizontal = Input.GetAxis("Horizontal");
         float vertical = Input.GetAxis("Vertical");
 
@@ -102,7 +86,6 @@ public class Movement : MonoBehaviour
         Vector3 forward = cameraTransform.forward;
         Vector3 right = cameraTransform.right;
 
-        // Flatten vectors for ground movement
         forward.y = 0f;
         right.y = 0f;
         forward.Normalize();
@@ -110,8 +93,8 @@ public class Movement : MonoBehaviour
 
         moveDirection = (forward * vertical + right * horizontal).normalized;
 
-        // Jump input
-        if (Input.GetKeyDown(KeyCode.Space) && isGrounded && !isChargingJump && !isCrouching)
+        // Jump input - simplified
+        if (Input.GetKeyDown(KeyCode.Space) && isGrounded && !isChargingJump)
         {
             StartJumpCharge();
         }
@@ -147,7 +130,6 @@ public class Movement : MonoBehaviour
         }
         else
         {
-            // Reset camera position
             cameraTransform.localPosition = Vector3.Lerp(cameraTransform.localPosition,
                 originalCameraLocalPosition, Time.deltaTime * 10f);
         }
@@ -155,22 +137,17 @@ public class Movement : MonoBehaviour
 
     void HandleCameraRotation()
     {
-        // Get mouse input
         float mouseX = Input.GetAxis("Mouse X") * mouseSensitivity;
         float mouseY = Input.GetAxis("Mouse Y") * mouseSensitivity * (invertYAxis ? 1f : -1f);
 
-        // Rotate player horizontally (yaw)
         cameraYaw += mouseX;
         transform.rotation = Quaternion.Euler(0f, cameraYaw, 0f);
 
-        // Rotate camera vertically (pitch)
         cameraPitch += mouseY;
         cameraPitch = Mathf.Clamp(cameraPitch, minVerticalAngle, maxVerticalAngle);
 
-        // Apply rotation to camera
         cameraTransform.localRotation = Quaternion.Euler(cameraPitch, 0f, 0f);
 
-        // Optional: Escape key to show cursor
         if (Input.GetKeyDown(KeyCode.Escape))
         {
             Cursor.lockState = Cursor.lockState == CursorLockMode.Locked ?
@@ -183,7 +160,7 @@ public class Movement : MonoBehaviour
     {
         isChargingJump = true;
         jumpChargeTimer = 0f;
-        rb.linearVelocity = new Vector3(rb.linearVelocity.x * 0.1f, rb.linearVelocity.y, rb.linearVelocity.z * 0.1f); // Stop movement
+        rb.linearVelocity = new Vector3(rb.linearVelocity.x * 0.1f, rb.linearVelocity.y, rb.linearVelocity.z * 0.1f);
     }
 
     void ExecuteJump()
@@ -194,48 +171,6 @@ public class Movement : MonoBehaviour
             isChargingJump = false;
             jumpChargeTimer = 0f;
         }
-        Vector2 move = Vector2.zero;
-        bool jumpHeld = false;
-        bool jumpPressed = false;
-        bool jumpReleased = false;
-
-        move = Vector2.ClampMagnitude(move, 1f);
-
-        rb.linearVelocity = new Vector3(
-            move.x * moveSpeed,
-            rb.linearVelocity.y,
-            move.y * moveSpeed
-        );
-
-        if (jumpPressed && IsGrounded)
-        {
-            charging = true;
-            chargeTimer = 0f;
-            rb.useGravity = false;
-            rb.linearVelocity = Vector3.zero;
-        }
-
-        if (charging && jumpHeld)
-        {
-            chargeTimer += Time.deltaTime;
-            rb.linearVelocity = Vector3.up * floatSpeed;
-
-            if (chargeTimer >= chargeTime)
-                Slam();
-        }
-
-        if (charging && jumpReleased)
-        {
-            Slam();
-        }
-    }
-
-    void Slam()
-    {
-        charging = false;
-        rb.useGravity = true;
-        rb.linearVelocity = Vector3.zero;
-        rb.AddForce(Vector3.down * slamForce, ForceMode.Impulse);
     }
 
     void MovePlayer()
@@ -247,14 +182,12 @@ public class Movement : MonoBehaviour
         }
         else
         {
-            // Apply damping when no input
             rb.linearVelocity = new Vector3(rb.linearVelocity.x * 0.9f, rb.linearVelocity.y, rb.linearVelocity.z * 0.9f);
         }
     }
 
     void ApplyHeadBob()
     {
-        // Simple head bob simulation
         headBobTimer += Time.deltaTime * moveSpeed;
         float bobOffset = Mathf.Sin(headBobTimer * headBobFrequency) * headBobHeight;
 
@@ -265,13 +198,11 @@ public class Movement : MonoBehaviour
             newPosition, Time.deltaTime * 10f);
     }
 
-    // Helper method to check if player is falling (not grounded)
     public bool IsPlayerFalling()
     {
         return !isGrounded && rb.linearVelocity.y < 0;
     }
 
-    // Optional: Add camera shake when landing
     public void AddCameraShake(float intensity, float duration)
     {
         StartCoroutine(CameraShake(intensity, duration));
@@ -307,7 +238,6 @@ public class Movement : MonoBehaviour
 
     void OnDestroy()
     {
-        // Reset cursor when object is destroyed
         Cursor.lockState = CursorLockMode.None;
         Cursor.visible = true;
     }
