@@ -1030,7 +1030,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 8129478339144441532, guid: f7e57877f7da33f40a4ae91e7d248cb7, type: 3}
       propertyPath: fleeDistance
-      value: 4
+      value: 6
       objectReference: {fileID: 0}
     - target: {fileID: 8129478339144441532, guid: f7e57877f7da33f40a4ae91e7d248cb7, type: 3}
       propertyPath: detectionRange
@@ -1574,7 +1574,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 8129478339144441532, guid: f7e57877f7da33f40a4ae91e7d248cb7, type: 3}
       propertyPath: fleeDistance
-      value: 4
+      value: 6
       objectReference: {fileID: 0}
     - target: {fileID: 8129478339144441532, guid: f7e57877f7da33f40a4ae91e7d248cb7, type: 3}
       propertyPath: detectionRange
@@ -1891,7 +1891,7 @@ PrefabInstance:
     m_Modifications:
     - target: {fileID: 8129478339144441532, guid: f7e57877f7da33f40a4ae91e7d248cb7, type: 3}
       propertyPath: fleeDistance
-      value: 4
+      value: 6
       objectReference: {fileID: 0}
     - target: {fileID: 8129478339144441532, guid: f7e57877f7da33f40a4ae91e7d248cb7, type: 3}
       propertyPath: detectionRange
@@ -2851,7 +2851,7 @@ PrefabInstance:
       objectReference: {fileID: 1583724324}
     - target: {fileID: 8129478339144441532, guid: f7e57877f7da33f40a4ae91e7d248cb7, type: 3}
       propertyPath: fleeDistance
-      value: 4
+      value: 6
       objectReference: {fileID: 0}
     - target: {fileID: 8129478339144441532, guid: f7e57877f7da33f40a4ae91e7d248cb7, type: 3}
       propertyPath: detectionRange
