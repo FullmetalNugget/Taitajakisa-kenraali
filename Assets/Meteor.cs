@@ -11,6 +11,7 @@ public class Meteor : MonoBehaviour
     [SerializeField] private AudioClip fallingSound;
     [SerializeField] private AudioClip impactSound;
     [SerializeField] private float damage = 100f;
+    [SerializeField] private float maxLifetime = 4f;
 
     private Transform target;
     private float speed;
@@ -50,6 +51,8 @@ public class Meteor : MonoBehaviour
             trailInstance.transform.parent = transform;
         }
 
+        Invoke(nameof(ForceDestroy), maxLifetime);
+
         // Start looking at target
         StartCoroutine(HomingRoutine());
     }
@@ -70,6 +73,12 @@ public class Meteor : MonoBehaviour
         {
             Impact();
         }
+    }
+
+    void ForceDestroy()
+    {
+        if (hasHit) return;
+        Destroy(gameObject);
     }
 
     IEnumerator HomingRoutine()
